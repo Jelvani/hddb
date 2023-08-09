@@ -13,17 +13,29 @@ from litex.soc.interconnect import wishbone
 from litex.soc.cores.clock import *
 
 from usb import *
+from debug_core import *
 
 
 kB = 1024
 mB = 1024*kB
 
 class VectorProcessor(Module):
-    def __init__(self, DIM):
+    def __init__(self, soc, DIM):
         self.bus = bus = wishbone.Interface()
         v1 = Array(Signal(bits_sign=32, reset = 0x3) for a in range(DIM))
         v2 = Array(Signal(bits_sign=32, reset = 0x3) for a in range(DIM))
         res = Signal(bits_sign=32, reset=0)
+
+
+        #DEBUG#
+        #reg_arr = [res]
+        #regs = Array(reg_arr)
+        #soc.submodules.dbgcore = DebugCore(regs)
+        #soc.add_memory_region("dbgcore", origin=0x40050000, length=0x1000, type="io")
+        #soc.bus.add_slave(name="dbgcore", slave=soc.dbgcore.bus)
+        ################
+
+
 
         opcodes = {
             "NOP": 0x0,
@@ -35,8 +47,7 @@ class VectorProcessor(Module):
         #instruction register
         ir = Signal(bits_sign=32, reset=opcodes["DP"])
 
-
-
+        #added to "sys" clock domain
         self.sync += [
             If(ir == opcodes["DP"],
                 #this generates a long line of verilog: ((((((((1'd0 + (v10 * v20)) + (v11 * v21)) +....
@@ -89,7 +100,7 @@ class VectorProcessor(Module):
 platform = gsd_orangecrab.Platform(revision="0.2",device="85F",toolchain="trellis")
 soc = BaseSoC(platform, cpu_type="None",integrated_main_ram_size=1*kB) # set cpu_type=None to build without a CPU
 
-soc.submodules.vpu = VectorProcessor(DIM=8)
+soc.submodules.vpu = VectorProcessor(soc,DIM=2)
 soc.add_memory_region("vpu", origin=0x40030000, length=0x1000, type="io")
 soc.bus.add_slave(name="vpu", slave=soc.vpu.bus)
 builder = Builder(soc)

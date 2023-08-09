@@ -1,6 +1,6 @@
 
 
-const DIM: usize = 32;
+const DIM: usize = 2;
 
 mod fpga_mem{
 	use wishbone_bridge::UsbBridge;
