@@ -106,15 +106,6 @@ use crossterm::{
 };
 use ratatui::{prelude::*, widgets::*};
 
-/// This is a bare minimum example. There are many approaches to running an application loop, so
-/// this is not meant to be prescriptive. It is only meant to demonstrate the basic setup and
-/// teardown of a terminal application.
-///
-/// A more robust application would probably want to handle errors and ensure that the terminal is
-/// restored to a sane state before exiting. This example does not do that. It also does not handle
-/// events or update the application state. It just draws a greeting and exits when the user
-/// presses 'q'.
-
 fn main() -> Result<()> {
 
     let lines = lines_from_file("/mnt/c/Users/Admin/Desktop/phd_research/hdl_printf/symbol_table.txt");
@@ -129,8 +120,8 @@ fn main() -> Result<()> {
 
 
 struct App {
-    mod_register: bool,
-    register_input: String,
+    mod_register: bool, 
+    register_input: String, //input from keyboard to update a register value
     tab_idx: usize, //current selected register index
     tab_offset: Vec<usize>, //offset for register name scrolling
     symbol_table: Vec<String>,  //register names
@@ -157,9 +148,6 @@ impl App {
     }
 }
 
-/// Setup the terminal. This is where you would enable raw mode, enter the alternate screen, and
-/// hide the cursor. This example does not handle errors. A more robust application would probably
-/// want to handle errors and ensure that the terminal is restored to a sane state before exiting.
 fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
     let mut stdout = io::stdout();
     enable_raw_mode().context("failed to enable raw mode")?;
@@ -167,8 +155,7 @@ fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
     Terminal::new(CrosstermBackend::new(stdout)).context("creating terminal failed")
 }
 
-/// Restore the terminal. This is where you disable raw mode, leave the alternate screen, and show
-/// the cursor.
+
 fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
     disable_raw_mode().context("failed to disable raw mode")?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)
@@ -176,10 +163,7 @@ fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result
     terminal.show_cursor().context("unable to show cursor")
 }
 
-/// Run the application loop. This is where you would handle events and update the application
-/// state. This example exits when the user presses 'q'. Other styles of application loops are
-/// possible, for example, you could have multiple application states and switch between them based
-/// on events, or you could have a single application state and update it based on events.
+
 fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> Result<()> {
 
     const BASE: u32 = 0x40050000;
@@ -231,17 +215,15 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> Resu
     Ok(())
 }
 
-/// helper method to take a vector of strings and return a vector of list items
 fn list_items(items: Vec<&str>) -> Vec<ListItem> {
     items.iter().map(|i| ListItem::new(i.to_string())).collect()
 }
 
 
-
-/// Render the application. This is where you would draw the application UI. This example just
-/// draws a greeting.
 fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>, app: &mut App) {
 
+
+    
     let chunks = Layout::default()
     .direction(Direction::Horizontal)
     .margin(2)
@@ -255,18 +237,19 @@ fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>, app: &mut Ap
         .as_ref(),
     )
     .split(frame.size());
+
     
-
-
     //closure for creating a titled block
     let panel = |title: String| {
         Block::default()
             .borders(Borders::ALL)
-            .style(Style::default().bg(Color::Gray))
+            .style(Style::default().bg(Color::Black))
+            .border_style(Style::default().fg(Color::White))
+            .border_type(BorderType::Rounded)
             .title(Span::styled(
                 title,
                 Style::default().add_modifier(Modifier::BOLD),
-            ))
+            )).title_alignment(Alignment::Center)
     };
 
     //closure for creating a popup block
@@ -283,61 +266,65 @@ fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>, app: &mut Ap
             .padding(Padding::uniform(20))
     };
 
+    let block = panel("FPGA Debugger".to_string());
 
 
-  
-    let mut t_vals = Vec::new();
+    let table = 'table_logic: {
+        let mut t_vals = Vec::new();
 
-    for (i,sym) in app.symbol_table.iter().enumerate()
-    {
-
-        use substring::Substring;
-
-        let mut item = Vec::new();
-        //hacky way to achieve scrolling of long register names
-
-        item.push(Cell::from(app.symbol_table[i].clone().get(app.tab_offset[i]..).expect("REASON").to_string()));
-
-        //change text when editing registers
-        if app.mod_register && i==app.tab_idx
+        for (i,sym) in app.symbol_table.iter().enumerate()
         {
 
-            item.push(Cell::from(app.register_input.clone() + "_"));
+            use substring::Substring;
+
+            let mut item = Vec::new();
+            //hacky way to achieve scrolling of long register names
+
+            item.push(Cell::from(app.symbol_table[i].clone().get(app.tab_offset[i]..).expect("REASON").to_string()));
+
+            //change text when editing registers
+            if app.mod_register && i==app.tab_idx
+            {
+
+                item.push(Cell::from(app.register_input.clone() + "_"));
+            }
+            else{
+                item.push(Cell::from(app.reg_vals[i].clone()));
+            }
+            
+            t_vals.push(Row::new(item).style(Style::default().fg(Color::White)));
+            
         }
-        else{
-            item.push(Cell::from(app.reg_vals[i].clone()));
-        }
-        
-        t_vals.push(Row::new(item).style(Style::default().fg(Color::White)));
-        
-    }
 
 
-    let table = Table::new(t_vals)
-    // You can set the style of the entire Table.
-    .style(Style::default().bg(Color::Black).fg(Color::White))
-    // It has an optional header, which is simply a Row always visible at the top.
-    .header(
-        Row::new(vec!["Name", "Values"])
-            .style(Style::default().add_modifier(Modifier::BOLD).add_modifier(Modifier::UNDERLINED))
-            // If you want some space between the header and the rest of the rows, you can always
-            // specify some margin at the bottom.
-            .bottom_margin(2)
-    )
-    // As any other widget, a Table can be wrapped in a Block.
-    .block(Block::default().title("Registers").borders(Borders::ALL).title_alignment(Alignment::Center))
-    // Columns widths are constrained in the same way as Layout...
-    .widths(&[Constraint::Length(15), Constraint::Length(10)])
-    // ...and they can be separated by a fixed spacing.
-    .column_spacing(1)
-    // If you wish to highlight a row in any specific way when it is selected...
-    .highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::LightRed))
-    // ...and potentially show a symbol in front of the selection.
-    .highlight_symbol(">>");
+        Table::new(t_vals)
+            // You can set the style of the entire Table.
+            .style(Style::default().bg(Color::Black).fg(Color::White))
+            // It has an optional header, which is simply a Row always visible at the top.
+            .header(
+                Row::new(vec!["Name", "Values"])
+                    .style(Style::default().add_modifier(Modifier::BOLD).add_modifier(Modifier::UNDERLINED))
+                    // If you want some space between the header and the rest of the rows, you can always
+                    // specify some margin at the bottom.
+                    .bottom_margin(2)
+            )
+            // As any other widget, a Table can be wrapped in a Block.
+            .block(Block::default().title("Registers").borders(Borders::ALL).title_alignment(Alignment::Center))
+            // Columns widths are constrained in the same way as Layout...
+            .widths(&[Constraint::Length(15), Constraint::Length(10)])
+            // ...and they can be separated by a fixed spacing.
+            .column_spacing(1)
+            // If you wish to highlight a row in any specific way when it is selected...
+            .highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::LightRed))
+            // ...and potentially show a symbol in front of the selection.
+            .highlight_symbol(">>")
+    };
 
-    let mut table_state = TableState::default();
-
-    table_state.select(Some(app.tab_idx));
+    let mut table_state = 'tablestate_logic: {
+        let mut tb = TableState::default();
+        tb.select(Some(app.tab_idx));
+        tb
+    };
 
     'cursor_logic: {
         if app.mod_register {
@@ -345,24 +332,10 @@ fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>, app: &mut Ap
             app.cursor_y = chunks[0].y + app.tab_idx as u16 + 4; //offset for start of rows
             frame.set_cursor(app.cursor_x,app.cursor_y);
         }
-
         
     }
-    
-    frame.render_stateful_widget(table, chunks[0], &mut table_state);
-    
-    
 
     
-    let block = Block::default()
-        .title("FPGA Debugger").title_alignment(Alignment::Center)
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::White))
-        .border_type(BorderType::Rounded)
-        .style(Style::default().bg(Color::Black));
-
-
-    frame.render_widget(block,frame.size());
 
     /*
     if app.mod_register
@@ -373,6 +346,11 @@ fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>, app: &mut Ap
         frame.render_widget(input_panel,area);
     }
     */
+
+    'render_login: {
+        frame.render_stateful_widget(table, chunks[0], &mut table_state);
+        frame.render_widget(block,frame.size());
+    }
     
 
     
