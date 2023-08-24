@@ -18,6 +18,13 @@ from usb import *
 kB = 1024
 mB = 1024*kB
 
+'''
+OPERATION:
+    BASE address write causes write to register index
+    BASE+4 address r/w causes r/w to register indexed from BASE address
+    Order of register indexes is mapped in a symbol table
+'''
+
 class DebugCore(Module):
     def __init__(self, regs, virtual_clock, step_debug):
         self.bus = bus = wishbone.Interface()

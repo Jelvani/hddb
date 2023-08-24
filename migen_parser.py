@@ -1,6 +1,6 @@
 import ast
 import astpretty
-
+import sys
 
 
 dbg_core = """
@@ -12,7 +12,11 @@ soc.bus.add_slave(name="dbgcore", slave=soc.dbgcore.bus)
 
 symbol_table = []
 
-f = open("litex/blinker.py","r")
+if len(sys.argv) == 1:
+    print("Pass file as first argument!")
+    exit()
+    
+f = open(sys.argv[1],"r")
 tree = ast.parse(f.read())
 
 #set parents for nodes; not available in ast library

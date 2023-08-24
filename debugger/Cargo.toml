@@ -1,0 +1,16 @@
+[package]
+name = "debugger"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wishbone-bridge = "1.1.0"
+rand = "0.8.5"
+kdam = "0.3.0"
+termion = "1.5.5"
+ratatui = { version = "0.22.0", features = ["all-widgets"] }
+anyhow = "1.0.75"
+crossterm = "0.27.0"
+substring = "1.2.3"
