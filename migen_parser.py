@@ -48,7 +48,14 @@ for n in ast.walk(tree):
 for n in ast.walk(tree):
     if isinstance(n, ast.Name):
         if n.id == "self" and n.parent.attr=="sync":
-            #print(ast.dump(n.parent.parent))
+            #astpretty.pprint()
+            tmp = n.parent.parent.value.elts[0]
+            n.parent.parent.value.elts[0] = ast.Call(func=ast.Name(id="If", ctx=ast.Load()),
+                                args=[ast.Compare(left=ast.Name(id="_INTERNAL_virtual_clock", ctx=ast.Load()),
+                                                  ops = [ast.Gt()],
+                                                  comparators = [ast.Constant(value=0,kind=None)]),
+                                                  tmp],
+                                                  keywords=[])
             pass
 
                             
@@ -70,7 +77,7 @@ tree.body.insert(5,ast.parse(vc))
 tree.body.insert(-1,ast.parse(dbg_core))
 
 tree = ast.fix_missing_locations(tree)
-print(ast.unparse(tree))
+#print(ast.unparse(tree))
 file = open('litex/test_gen.py', 'w')
 file.write(ast.unparse(tree))
 file.close()

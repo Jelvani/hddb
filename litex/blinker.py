@@ -20,7 +20,7 @@ class Blink(Module):
         
 
         # synchronous assignment bound to sys clock domain
-        self.sync += [If((_INTERNAL_virtual_clock > 0),_INTERNAL_virtual_clock.eq(_INTERNAL_virtual_clock-1),counter.eq(counter + 1))]
+        self.sync += [counter.eq(counter + 1)]
 platform = gsd_orangecrab.Platform(revision="0.2",device="85F",toolchain="trellis")
 
 # Get led signals from our platform

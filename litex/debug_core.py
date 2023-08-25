@@ -30,6 +30,7 @@ class DebugCore(Module):
         self.bus = bus = wishbone.Interface()
         self.clock_domains.cd_debug = ClockDomain()
         self.sync += self.cd_debug.clk.eq(~self.cd_debug.clk)
+        self.sync += [If((virtual_clock > 0),virtual_clock.eq(virtual_clock-1))]
         reg_idx = Signal(bits_sign=32, reset = 0x0)
 
         #for 255 addresses
