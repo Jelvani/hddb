@@ -62,8 +62,14 @@ fn do_debug(mem: &fpga_mem::FpgaMem, app: &mut App) {
         if(i==0){
             mem.set(1,1);
         }
-
+        app.prev_reg_vals[i] = app.reg_vals[i].clone();
         app.reg_vals[i] = mem.get(1).to_string();
+        app.reg_changed[i] = false;
+        if app.reg_vals[i].eq(&app.prev_reg_vals[i])
+        {
+            app.reg_changed[i] = true;
+        }
+        
 
     }
 }
@@ -126,6 +132,8 @@ struct App {
     tab_offset: Vec<usize>, //offset for register name scrolling
     symbol_table: Vec<String>,  //register names
     reg_vals: Vec<String>, //register values
+    prev_reg_vals: Vec<String>, //previous register values
+    reg_changed: Vec<bool>,
     cursor_x: u16,
     cursor_y: u16,
 
@@ -139,6 +147,8 @@ impl App {
             tab_offset: vec![0; symbol_table.len()],
             symbol_table: symbol_table.clone(),
             reg_vals: vec!["0".to_string(); symbol_table.len()],
+            prev_reg_vals: vec!["0".to_string(); symbol_table.len()],
+            reg_changed: vec![false; symbol_table.len()],
             cursor_x: 0,
             cursor_y: 0}
     }
@@ -229,9 +239,9 @@ fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>, app: &mut Ap
     .margin(2)
     .constraints(
         [
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
+            Constraint::Percentage(45),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
             Constraint::Percentage(25),
         ]
         .as_ref(),
@@ -283,13 +293,19 @@ fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>, app: &mut Ap
             item.push(Cell::from(app.symbol_table[i].clone().get(app.tab_offset[i]..).expect("REASON").to_string()));
 
             //change text when editing registers
+            
+            let color = if app.reg_changed[i] { Color::White } else { Color::Red }; 
             if app.mod_register && i==app.tab_idx
             {
 
                 item.push(Cell::from(app.register_input.clone() + "_"));
+
+                item.push(Cell::from(app.prev_reg_vals[i].clone()));
             }
             else{
-                item.push(Cell::from(app.reg_vals[i].clone()));
+                //item.push(Cell::from(app.reg_vals[i].clone() + " <-- " + app.prev_reg_vals[i].as_str()));
+                item.push(Cell::from(app.reg_vals[i].clone()).style(Style::default().fg(color)));
+                item.push(Cell::from(app.prev_reg_vals[i].clone()));
             }
             
             t_vals.push(Row::new(item).style(Style::default().fg(Color::White)));
@@ -302,7 +318,7 @@ fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>, app: &mut Ap
             .style(Style::default().bg(Color::Black).fg(Color::White))
             // It has an optional header, which is simply a Row always visible at the top.
             .header(
-                Row::new(vec!["Name", "Values"])
+                Row::new(vec!["Name", "Values", "Previous Values"])
                     .style(Style::default().add_modifier(Modifier::BOLD).add_modifier(Modifier::UNDERLINED))
                     // If you want some space between the header and the rest of the rows, you can always
                     // specify some margin at the bottom.
@@ -311,7 +327,7 @@ fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>, app: &mut Ap
             // As any other widget, a Table can be wrapped in a Block.
             .block(Block::default().title("Registers").borders(Borders::ALL).title_alignment(Alignment::Center))
             // Columns widths are constrained in the same way as Layout...
-            .widths(&[Constraint::Length(15), Constraint::Length(10)])
+            .widths(&[Constraint::Length(15), Constraint::Length(15), Constraint::Length(15)])
             // ...and they can be separated by a fixed spacing.
             .column_spacing(1)
             // If you wish to highlight a row in any specific way when it is selected...
