@@ -42,6 +42,14 @@ for n in ast.walk(tree):
                                 n1 = ast.parse(regs_append)
                                 #insert append at end of current scope
                                 c2.parent.parent.parent.body.insert(-1,n1)
+                            elif c2.id == "Array":
+                                regs_append = "for x in range(" + str(c2.parent.args[0].generators[0].iter.args[0].value) + "): _INTERNAL_reg_arr.append(" + c2.parent.parent.targets[0].id+"["+ "x" +"])"
+                                for x in range(c2.parent.args[0].generators[0].iter.args[0].value):
+                                    symbol_table.append(c2.parent.parent.targets[0].id + "[" + str(x) + "]")
+                                n1 = ast.parse(regs_append)
+                                c2.parent.parent.parent.body.insert(-1,n1)
+                                #astpretty.pprint(c2.parent.args[0].generators[0].iter.args[0].id)
+                                #exit(0)
 
 
 #add if statements for virtual clock stepping
@@ -49,13 +57,16 @@ for n in ast.walk(tree):
     if isinstance(n, ast.Name):
         if n.id == "self" and n.parent.attr=="sync":
             #astpretty.pprint()
-            tmp = n.parent.parent.value.elts[0]
-            n.parent.parent.value.elts[0] = ast.Call(func=ast.Name(id="If", ctx=ast.Load()),
+            tmp = n.parent.parent.value.elts
+            n.parent.parent.value.elts = [ast.Call(func=ast.Name(id="If", ctx=ast.Load()),
                                 args=[ast.Compare(left=ast.Name(id="_INTERNAL_virtual_clock", ctx=ast.Load()),
                                                   ops = [ast.Gt()],
                                                   comparators = [ast.Constant(value=0,kind=None)]),
-                                                  tmp],
-                                                  keywords=[])
+                                                  *tmp], #*tmp unpacks tmp list
+                                                  keywords=[])]
+
+
+
             pass
 
                             
