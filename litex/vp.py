@@ -22,8 +22,8 @@ mB = 1024*kB
 class VectorProcessor(Module):
     def __init__(self, soc, DIM):
         self.bus = bus = wishbone.Interface()
-        v1 = Array(Signal(bits_sign=32, reset = 0x3) for a in range(8))
-        v2 = Array(Signal(bits_sign=32, reset = 0x3) for a in range(8))
+        v1 = Array(Signal(bits_sign=32, reset = 0x3) for a in range(16))
+        v2 = Array(Signal(bits_sign=32, reset = 0x3) for a in range(16))
         res = Signal(bits_sign=32, reset=0)
 
 
@@ -69,6 +69,8 @@ class VectorProcessor(Module):
                 ir.eq(opcodes["NOP"])
             ]
 
+        #uncomment below when not using source-source compiler
+        #otherwise vector processor will be optimized out of design
         '''
         #for 255 addresses
         bitmask = 0b11111111
@@ -96,11 +98,12 @@ class VectorProcessor(Module):
             )
         ]
         '''
+        
 
 platform = gsd_orangecrab.Platform(revision="0.2",device="85F",toolchain="trellis")
 soc = BaseSoC(platform, cpu_type="None",integrated_main_ram_size=1*kB) # set cpu_type=None to build without a CPU
 
-soc.submodules.vpu = VectorProcessor(soc,DIM=8)
+soc.submodules.vpu = VectorProcessor(soc,DIM=16)
 soc.add_memory_region("vpu", origin=0x40030000, length=0x1000, type="io")
 soc.bus.add_slave(name="vpu", slave=soc.vpu.bus)
 builder = Builder(soc)

@@ -112,8 +112,7 @@ class BaseSoC(SoCCore):
         self.submodules.usb0 = CSRClockDomainWrapper(usb_iobuf)
 
         #CDC must be true for this to work properly
-        self.submodules.usb = dummyusb.DummyUsb(usb_iobuf, debug=True, cdc=True,
-                                                relax_timing = False, burst=True)
+        self.submodules.usb = dummyusb.DummyUsb(usb_iobuf, debug=True, cdc=True)
         self.bus.add_master(name="usb_bridge",master=self.usb.debug_bridge.wishbone)
 
 
