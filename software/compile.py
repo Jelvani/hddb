@@ -89,11 +89,11 @@ tree.body.insert(-1,ast.parse(dbg_core))
 
 tree = ast.fix_missing_locations(tree)
 #print(ast.unparse(tree))
-file = open('litex/test_gen.py', 'w')
+file = open("build/out.py", 'w')
 file.write(ast.unparse(tree))
 file.close()
 
-print(symbol_table)
+#print(symbol_table)
 
 with open('symbol_table.txt', 'w') as f:
     for line in symbol_table:

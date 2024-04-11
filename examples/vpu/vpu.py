@@ -44,6 +44,7 @@ class VectorProcessor(Module):
             "MUL": 0x3,
             "DP": 0x4 #saves result at address 0
         }
+        
         #instruction register
         ir = Signal(bits_sign=32, reset=opcodes["DP"])
 
