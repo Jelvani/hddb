@@ -24,4 +24,4 @@ python3 software/compile.py examples/blink/blinker.py
 
 `software/`: The HDDB client and compiler live here.
 
-`examples`: RTL examples along with client software for driving the examples live here.
+`examples/`: RTL examples along with client software for driving the examples live here.
