@@ -95,6 +95,6 @@ file.close()
 
 #print(symbol_table)
 
-with open('symbol_table.txt', 'w') as f:
+with open('build/registers.sym', 'w') as f:
     for line in symbol_table:
         f.write(f"{line}\n")
