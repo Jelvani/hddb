@@ -81,11 +81,20 @@ _INTERNAL_step_debug = Signal(bits_sign=1, reset = 0x0)
 _INTERNAL_reg_arr.append(_INTERNAL_virtual_clock)
 """
 
+imp = """
+import sys
+sys.path.append('../hardware/src/')
+sys.path.append('../hardware/')
+"""
+
 tree.body.insert(0,regs_list)
 
 #later fix this to insert after import of modules
 tree.body.insert(5,ast.parse(vc))
+
+
 tree.body.insert(-1,ast.parse(dbg_core))
+tree.body.insert(-1,ast.parse(imp))
 
 tree = ast.fix_missing_locations(tree)
 #print(ast.unparse(tree))
